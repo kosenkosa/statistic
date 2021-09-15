@@ -18,9 +18,7 @@ import CardActions from '@material-ui/core/CardActions';
 import Collapse from '@material-ui/core/Collapse';
 import IconButton from '@material-ui/core/IconButton';
 import AccordionDetails from '@material-ui/core/AccordionDetails';
-
-
-
+import { Skeleton } from '@material-ui/lab';
 
 const useStyles = makeStyles((theme) => ({
     container: {
@@ -63,21 +61,13 @@ const useStyles = makeStyles((theme) => ({
 
 }));
 
-
-
-
-
 export default function Data() {
     const classes = useStyles();
-
     const [rows, setRow] = useState([])
-    const [startDate, setStartDate] = useState(new Date())
-    const [finishDate, setFinishDate] = useState(new Date())
-
-
-
+    const [startDate, setStartDate] = useState()
+    const [finishDate, setFinishDate] = useState()
+    const [loading, setLoading] = useState(false)
     const [expanded, setExpanded] = React.useState(false);
-
     const handleChange = (panel) => (event, isExpanded) => {
         setExpanded(isExpanded ? panel : false);
     };
@@ -86,7 +76,7 @@ export default function Data() {
         axios("https://politic-map-server.herokuapp.com/api/googlesheets/getDataFromSpreadSheet?id=1E0-R3MSi296MfaXSt7MvjlLJu9jZICEMBEAU7U-QDe4&range=Загальна структура").then(res => {
 
 
-             console.log(res.data)
+            console.log(res.data)
 
             var resAr = res.data.data.values.filter((el) => {
                 try {
@@ -166,168 +156,200 @@ export default function Data() {
             })
 
             setRow(resArEnd)
+            setLoading(false)
             console.log(resArEnd)
         })
-
 
     }
 
     useEffect(() => {
-        console.log(rows)
-        console.log(new Date(startDate))
-        console.log(new Date(finishDate))
-    }, [rows])
+        var now = new Date();
+        var next_week_start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (2 - now.getDay()));
 
+        const dateNow = next_week_start
+        const year = dateNow.getFullYear(); // Getting current year from the created Date object
+        const monthWithOffset = dateNow.getUTCMonth() + 1; // January is 0 by default in JS. Offsetting +1 to fix date for calendar.
+        const month = // Setting current Month number from current Date object
+            monthWithOffset.toString().length < 2 // Checking if month is < 10 and pre-prending 0 to adjust for date input.
+                ? `0${monthWithOffset}`
+                : monthWithOffset;
+        const date =
+            dateNow.getUTCDate().toString().length < 2 // Checking if date is < 10 and pre-prending 0 if not to adjust for date input.
+                ? `0${dateNow.getUTCDate()}`
+                : dateNow.getUTCDate();
+
+        const materialDateInput = `${year}-${month}-${date}`;
+
+        setStartDate(materialDateInput)
+
+    }, [])
+
+
+    useEffect(() => {
+        var now = new Date(startDate)
+        var next_week_start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (8 - now.getDay()));
+
+        const dateNow = next_week_start
+        const year = dateNow.getFullYear(); // Getting current year from the created Date object
+        const monthWithOffset = dateNow.getUTCMonth() + 1; // January is 0 by default in JS. Offsetting +1 to fix date for calendar.
+        const month = // Setting current Month number from current Date object
+            monthWithOffset.toString().length < 2 // Checking if month is < 10 and pre-prending 0 to adjust for date input.
+                ? `0${monthWithOffset}`
+                : monthWithOffset;
+        const date =
+            dateNow.getUTCDate().toString().length < 2 // Checking if date is < 10 and pre-prending 0 if not to adjust for date input.
+                ? `0${dateNow.getUTCDate()}`
+                : dateNow.getUTCDate();
+
+        const materialDateInput = `${year}-${month}-${date}`;
+
+
+        setFinishDate(materialDateInput)
+    }, [startDate])
+
+    useEffect(() => {
+        console.log(finishDate)
+        if (finishDate) {
+            setLoading(true)
+            get()
+        }
+    }, [finishDate])
 
     return (
         <>
-            <div style={{ display: "flex", justifyContent: "space-around", background: '#0000ff1f' }}>
-                <TextField
-                    id="date"
-                    label="start"
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => { setStartDate(e.target.value) }}
-                    defaultValue={startDate}
-                    className={classes.textField}
-                    InputLabelProps={{
-                        shrink: true,
-                    }}
-                />
-                <TextField
-                    id="date"
-                    label="finish"
-                    type="date"
-                    value={finishDate}
-                    onChange={(e) => { setFinishDate(e.target.value) }}
+            {loading && <div> <Skeleton />
+                <Skeleton animation={false} />
+                <Skeleton animation="wave" /> </div>}
 
-                    defaultValue={finishDate}
-                    className={classes.textField}
-                    InputLabelProps={{
-                        shrink: true,
-                    }}
-                />
-                <Button variant="outlined" onClick={() => { get() }}>click</Button>
+            {!loading && <>
+                <div style={{ display: "flex", justifyContent: "space-around", background: '#0000ff1f' }}>
+                    <TextField
+                        id="date"
+                        label="start"
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => { setStartDate(e.target.value) }}
+                        className={classes.textField}
+                        InputLabelProps={{
+                            shrink: true,
+                        }}
+                    />
+                    <TextField
+                        id="date"
+                        label="finish"
+                        type="date"
+                        value={finishDate}
+                        onChange={(e) => { setFinishDate(e.target.value) }}
 
-            </div>
-            {/* <Container style = {{width: '100%'}}> */}
-            <Resalt rows={rows} />
-            {/* </Container> */}
+                        className={classes.textField}
+                        InputLabelProps={{
+                            shrink: true,
+                        }}
+                    />
+                    <Button variant="outlined" onClick={() => { get() }}>click</Button>
 
-            <TreeView
-                className={classes.rootcard}
-                defaultCollapseIcon={<ExpandMoreIcon />}
-                defaultExpandIcon={<ChevronRightIcon />}
-                multiSelect
-            >
+                </div>
+                {/* <Container style = {{width: '100%'}}> */}
+                <Resalt rows={rows} />
+                {/* </Container> */}
 
-                {rows && rows.map((el, ind) => {
+                <TreeView
+                    className={classes.rootcard}
+                    defaultCollapseIcon={<ExpandMoreIcon />}
+                    defaultExpandIcon={<ChevronRightIcon />}
+                    multiSelect
+                >
 
-                    return <TreeItem nodeId={el.id} label={el.Name}>
-                        <TreeItem nodeId={el.Name + ind} label={"Виконано " + el.Fact}>
-                            {Object.keys(el.arrT).map(elT => {
-                                // console.log(Array([...el.arrT[elT]].length))
-                                return (
-                                    // <div>{elT + " " + Array([...el.arrT[elT]])[0].length}</div>
-                                    <Accordion style={{ backgroundColor: "#e4ecec" }} expanded={expanded === el.Name + "виконано  " + elT} onChange={handleChange(el.Name + "виконано  " + elT)}>
-                                        <AccordionSummary
-                                            style={{
-                                                margin: "3px",
-                                                display: "flex",
-                                                flexGrow: "1",
-                                                // transition: margin 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
-                                                justifyContent: "space-between",
-                                                alignItems: "center",
+                    {rows && rows.map((el, ind) => {
 
-                                            }}
-                                            expandIcon={<ExpandMoreIcon />}
-                                            aria-controls="panel1bh-content"
-                                            id="panel1bh-header"
-                                        >
-                                            <Typography className={classes.heading}>{elT}</Typography>
-                                            <Typography className={classes.secondaryHeading}>{Array([...el.arrT[elT]])[0].length}</Typography>
-                                        </AccordionSummary>
-                                        <AccordionDetails style={{
-                                            flexDirection: "column", padding: "3px"
-                                        }}>
-                                            {Array([...el.arrT[elT]])[0].map(elA => {
-                                                return <Typography paragraph><a href={"https://politic-map.cc.ua/index.php?title=" + elA.object} target="_blank" >
-                                                    {elA.object};
-                                                </a> </Typography>
-                                            })}
-                                        </AccordionDetails>
-                                    </Accordion>
-                                )
-                            })}
+                        return <TreeItem nodeId={el.id} label={el.Name}>
+                            <TreeItem nodeId={el.Name + ind} label={"Виконано " + el.Fact}>
+                                {Object.keys(el.arrT).map(elT => {
+                                    // console.log(Array([...el.arrT[elT]].length))
+                                    return (
+                                        // <div>{elT + " " + Array([...el.arrT[elT]])[0].length}</div>
+                                        <Accordion style={{ backgroundColor: "#e4ecec" }} expanded={expanded === el.Name + "виконано  " + elT} onChange={handleChange(el.Name + "виконано  " + elT)}>
+                                            <AccordionSummary
+                                                style={{
+                                                    margin: "3px",
+                                                    display: "flex",
+                                                    flexGrow: "1",
+                                                    // transition: margin 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+                                                    justifyContent: "space-between",
+                                                    alignItems: "center",
+
+                                                }}
+                                                expandIcon={<ExpandMoreIcon />}
+                                                aria-controls="panel1bh-content"
+                                                id="panel1bh-header"
+                                            >
+                                                <Typography className={classes.heading}>{elT}</Typography>
+                                                <Typography className={classes.secondaryHeading}>{Array([...el.arrT[elT]])[0].length}</Typography>
+                                            </AccordionSummary>
+                                            <AccordionDetails style={{
+                                                flexDirection: "column", padding: "3px"
+                                            }}>
+                                                {Array([...el.arrT[elT]])[0].map(elA => {
+                                                    return <Typography paragraph><a href={"https://politic-map.cc.ua/index.php?title=" + elA.object} target="_blank" >
+                                                        {elA.object};
+                                                    </a> </Typography>
+                                                })}
+                                            </AccordionDetails>
+                                        </Accordion>
+                                    )
+                                })}
+                            </TreeItem>
+
+                            <TreeItem nodeId={el.Name + ind + "2"} label={"Не викнано " + el.Ostatok} >
+                                {Object.keys(el.arrF).map(elF => {
+                                    // console.log(Array([...el.arrF[elF]].length))
+                                    return (
+                                        <Accordion style={{ backgroundColor: "#e4ecec", borderRadius: "5px" }} expanded={expanded === el.Name + "Не виконано  " + elF} onChange={handleChange(el.Name + "Не виконано  " + elF)}>
+                                            <AccordionSummary
+                                                style={{
+                                                    margin: "3px",
+                                                    display: "flex",
+                                                    flexGrow: "1",
+                                                    // transition: margin 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+                                                    justifyContent: "space-between",
+                                                    alignItems: "center"
+                                                }}
+
+                                                expandIcon={<ExpandMoreIcon />}
+                                                aria-controls="panel1bh-content"
+                                                id="panel1bh-header"
+                                            >
+                                                <Typography className={classes.heading}>{elF}</Typography>
+                                                <Typography className={classes.secondaryHeading}>{Array([...el.arrF[elF]])[0].length}</Typography>
+                                            </AccordionSummary>
+                                            <AccordionDetails style={{
+                                                flexDirection: "column", padding: "5px", margin: "3px"
+                                            }}>
+                                                {Array([...el.arrF[elF]])[0].map(elA => {
+                                                    return <Typography paragraph>
+                                                        <a href={"https://politic-map.cc.ua/index.php?title=" + elA.object} target="_blank" >
+                                                            {elA.object};
+                                                        </a>
+
+                                                    </Typography>
+
+                                                })}
+                                            </AccordionDetails>
+                                        </Accordion>
+
+                                    )
+                                })}
+
+                            </TreeItem>
                         </TreeItem>
 
-                        <TreeItem nodeId={el.Name + ind + "2"} label={"Не викнано " + el.Ostatok} >
-                        {Object.keys(el.arrF).map(elF => {
-                            // console.log(Array([...el.arrF[elF]].length))
-                            return (
-                                <Accordion style={{ backgroundColor: "#e4ecec", borderRadius: "5px" }} expanded={expanded === el.Name + "Не виконано  " + elF} onChange={handleChange(el.Name + "Не виконано  " + elF)}>
-                                    <AccordionSummary
-                                        style={{
-                                            margin: "3px",
-                                            display: "flex",
-                                            flexGrow: "1",
-                                            // transition: margin 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
-                                            justifyContent: "space-between",
-                                            alignItems: "center"
-                                        }}
+                    })}
 
-                                        expandIcon={<ExpandMoreIcon />}
-                                        aria-controls="panel1bh-content"
-                                        id="panel1bh-header"
-                                    >
-                                        <Typography className={classes.heading}>{elF}</Typography>
-                                        <Typography className={classes.secondaryHeading}>{Array([...el.arrF[elF]])[0].length}</Typography>
-                                    </AccordionSummary>
-                                    <AccordionDetails style={{
-                                        flexDirection: "column", padding: "5px", margin: "3px"
-                                    }}>
-                                        {Array([...el.arrF[elF]])[0].map(elA => {
-                                            return <Typography paragraph>
-                                                <a href={"https://politic-map.cc.ua/index.php?title=" + elA.object} target="_blank" >
-                                                    {elA.object};
-                                                </a>
+                </TreeView>
 
-                                            </Typography>
-
-                                        })}
-                                    </AccordionDetails>
-                                </Accordion>
-
-                            )
-                        })}
-
-                    </TreeItem>
-                    </TreeItem>
-
-                })}
-
-            </TreeView>
-
-
-
-
-
-
-
-
-
-
-
+            </>}
 
         </>
     );
-
-
-
-
-
-
-
-
 
 }

@@ -1,5 +1,4 @@
-import react from 'react'
-
+import React from 'react'
 import { DataGrid } from '@material-ui/data-grid';
 
 const columns = [
@@ -38,9 +37,6 @@ const columns = [
     },
 ];
 
-
-
-
 const Resalt = (props) => {
     const rows = props.rows
 
@@ -50,8 +46,8 @@ const Resalt = (props) => {
                 rows={rows}
                 columns={columns}
                 pageSize={5}
-              
-            disableSelectionOnClick
+
+                disableSelectionOnClick
             />
         </div>
     )
